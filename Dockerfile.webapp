@@ -10,7 +10,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir streamlit
+    && pip install --no-cache-dir streamlit st-theme
 
 COPY webapp.py .
 
