@@ -34,6 +34,7 @@ services:
     environment:
       - STRANDS_AGENT_API_BASE=http://agent:8888
       - STRANDS_AGENT_VERSION=v1.0.0
+      - STRAND_AGENT_RUNTIME="Docker Compose"
     depends_on:
       agent:
         condition: service_healthy

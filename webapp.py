@@ -20,7 +20,7 @@ def check_agent_status():
 
 agent_status = check_agent_status()
 agent_version = os.getenv("STRANDS_AGENT_VERSION", "1.0.0")
-agent_runtime = os.getenv("STRAND_AGENT_RUNTIME", "Docker Compose")
+agent_runtime = os.getenv("STRAND_AGENT_RUNTIME", "Local")
 
 status_color = "🟢 Connected" if agent_status else "🔴 Disconnected"
 
