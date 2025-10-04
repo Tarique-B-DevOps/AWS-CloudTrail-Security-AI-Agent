@@ -19,16 +19,16 @@ services:
       - STRANDS_AGENT_VERSION=v1.0.0
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/ping"]
-      interval: 30s
-      timeout: 5s
+      interval: 10s
+      timeout: 3s
       retries: 5
 
   webapp:
     build:
       context: .
       dockerfile: Dockerfile.webapp
-    image: aws-cloudtrail-webapp:latest
-    container_name: aws-cloudtrail-webapp
+    image: aws-cloudtrail-agent-webapp:latest
+    container_name: aws-cloudtrail-agent-webapp
     ports:
       - "8501:8501"
     environment:
