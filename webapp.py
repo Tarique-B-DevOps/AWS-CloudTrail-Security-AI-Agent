@@ -1,7 +1,7 @@
 import os
 import streamlit as st
 import requests
-from streamlit_theme import st_theme   # NEW: reliable theme detection
+from streamlit_theme import st_theme
 
 st.set_page_config(page_title="AWS CloudTrail Security Agent", initial_sidebar_state="collapsed")
 
@@ -20,6 +20,7 @@ def check_agent_status():
 
 agent_status = check_agent_status()
 agent_version = os.getenv("STRANDS_AGENT_VERSION", "1.0.0")
+agent_runtime = os.getenv("STRAND_AGENT_RUNTIME", "Docker Compose")
 
 status_color = "🟢 Connected" if agent_status else "🔴 Disconnected"
 
@@ -28,10 +29,10 @@ st.markdown(
     <div style='text-align: center;'>
         <h1>☁️ AWS CloudTrail Security Agent</h1>
         <p style='color: #c5c5c5; font-size: 1.05rem; margin-top: -8px;'>
-            Analyze AWS CloudTrail logs with security insights.
+            Analyze AWS CloudTrail events with security insights.
         </p>
         <p style='font-size: 0.95rem; margin-top: 6px;'>
-            <b>Agent Status:</b> {status_color} &nbsp; | &nbsp; <b>Version:</b> {agent_version}
+            <b>Agent Status:</b> {status_color} &nbsp; | &nbsp; <b>Version:</b> {agent_version} &nbsp; | &nbsp; <b>Runtime:</b> {agent_runtime}
         </p>
     </div>
     <hr style='margin-top: 10px; margin-bottom: 15px;'>
