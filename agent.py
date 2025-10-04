@@ -51,7 +51,7 @@ strands_agent = Agent(
     system_prompt=system_prompt
 )
 
-app = FastAPI(title=AGENT_TITLE, version=AGENT_VERSION)
+app = FastAPI(title=STRANDS_AGENT_TITLE, version=STRANDS_AGENT_VERSION)
 
 app.add_middleware(
     CORSMiddleware,
