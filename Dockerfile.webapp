@@ -7,8 +7,6 @@ ENV STREAMLIT_SERVER_PORT=8501
 
 WORKDIR /app
 
-COPY requirements.txt .
-
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir streamlit st-theme
 
