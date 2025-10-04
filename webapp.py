@@ -1,8 +1,9 @@
 import os
 import streamlit as st
 import requests
+from streamlit_theme import st_theme   # NEW: reliable theme detection
 
-st.set_page_config(page_title="CloudTrail Security Agent", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="AWS CloudTrail Security Agent", initial_sidebar_state="collapsed")
 
 STRANDS_AGENT_API_BASE = os.getenv("STRANDS_AGENT_API_BASE", "http://localhost:8888")
 PING_URL = f"{STRANDS_AGENT_API_BASE}/ping"
@@ -25,7 +26,7 @@ status_color = "🟢 Connected" if agent_status else "🔴 Disconnected"
 st.markdown(
     f"""
     <div style='text-align: center;'>
-        <h1>☁️ CloudTrail Security Agent</h1>
+        <h1>☁️ AWS CloudTrail Security Agent</h1>
         <p style='color: #c5c5c5; font-size: 1.05rem; margin-top: -8px;'>
             Analyze AWS CloudTrail logs with security insights.
         </p>
@@ -89,54 +90,110 @@ if prompt := st.chat_input("Type your analysis query and press Enter..."):
         full_response = clean_markdown("".join(response_chunks))
         st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-st.markdown(
-    """
-<style>
-.block-container {
-    max-width: 880px;
-    margin: 0 auto;
-}
-.stChatMessage {
-    width: 100%;
-    border-radius: 12px;
-    padding: 14px 18px;
-    margin-bottom: 12px !important;
-    line-height: 1.55;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-    display: flex;
-    flex-direction: column;
-}
-.stChatMessage:has(.stMarkdown) {
-    background-color: #141414 !important;
-    color: #e2e2e2 !important;
-}
-[data-testid="stChatMessage"][data-testid="stChatMessage"]:has(.stMarkdown):last-child {
-    background-color: #1b1b1b !important;
-    color: #e2e2e2 !important;
-    align-items: flex-start !important;
-    text-align: left !important;
-}
-code, pre {
-    background-color: #232336 !important;
-    color: #d4d4d4 !important;
-    font-family: 'Source Code Pro', monospace;
-    font-size: 0.9rem;
-    border-radius: 6px;
-    padding: 6px;
-}
-ul, ol {
-    padding-left: 1.25rem;
-}
-.stChatInput {
-    max-width: 880px;
-    margin: 0 auto;
-}
-.stChatInput input {
-    background: #232336 !important;
-    color: #e2e2e2 !important;
-    border-radius: 8px;
-}
-</style>
-""",
-    unsafe_allow_html=True,
-)
+
+theme = st_theme() or {}
+theme_base = theme.get("base", "dark")
+is_light_mode = (theme_base == "light")
+
+if is_light_mode:
+    st.markdown(
+        """
+        <style>
+        .block-container {
+            max-width: 880px;
+            margin: 0 auto;
+        }
+        .stChatMessage {
+            width: 100%;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 12px !important;
+            line-height: 1.55;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        /* Assistant cards */
+        .stChatMessage:has(.stMarkdown) {
+            background-color: #f9f9f9 !important;
+            color: #111111 !important;
+        }
+        /* User cards */
+        [data-testid="stChatMessage"]:has(.stMarkdown):last-child {
+            background-color: #e9e9e9 !important;
+            color: #111111 !important;
+            align-items: flex-start !important;
+            text-align: left !important;
+        }
+        code, pre {
+            background-color: #f1f1f1 !important;
+            color: #222222 !important;
+            font-family: 'Source Code Pro', monospace;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            padding: 6px;
+        }
+        .stChatInput {
+            max-width: 880px;
+            margin: 0 auto;
+        }
+        .stChatInput input {
+            background: #ffffff !important;
+            color: #111111 !important;
+            border-radius: 8px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+else:
+    st.markdown(
+        """
+        <style>
+        .block-container {
+            max-width: 880px;
+            margin: 0 auto;
+        }
+        .stChatMessage {
+            width: 100%;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 12px !important;
+            line-height: 1.55;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+        }
+        /* Assistant cards */
+        .stChatMessage:has(.stMarkdown) {
+            background-color: #141414 !important;
+            color: #e2e2e2 !important;
+        }
+        /* User cards */
+        [data-testid="stChatMessage"]:has(.stMarkdown):last-child {
+            background-color: #1b1b1b !important;
+            color: #e2e2e2 !important;
+            align-items: flex-start !important;
+            text-align: left !important;
+        }
+        code, pre {
+            background-color: #232336 !important;
+            color: #d4d4d4 !important;
+            font-family: 'Source Code Pro', monospace;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            padding: 6px;
+        }
+        .stChatInput {
+            max-width: 880px;
+            margin: 0 auto;
+        }
+        .stChatInput input {
+            background: #232336 !important;
+            color: #e2e2e2 !important;
+            border-radius: 8px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
