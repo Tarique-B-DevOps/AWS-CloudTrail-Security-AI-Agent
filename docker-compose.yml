@@ -8,7 +8,7 @@ services:
     image: aws-cloudtrail-agent:latest
     container_name: aws-cloudtrail-agent
     ports:
-      - "8888:8888"
+      - "8080:8080"
     environment:
       - BYPASS_TOOL_CONSENT=true
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -18,7 +18,7 @@ services:
       - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID}
       - STRANDS_AGENT_VERSION=v1.0.0
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8888/ping"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -32,7 +32,7 @@ services:
     ports:
       - "8501:8501"
     environment:
-      - STRANDS_AGENT_API_BASE=http://agent:8888
+      - STRANDS_AGENT_API_BASE=http://agent:8080
       - STRANDS_AGENT_VERSION=v1.0.0
       - STRAND_AGENT_RUNTIME="Docker Compose"
     depends_on:

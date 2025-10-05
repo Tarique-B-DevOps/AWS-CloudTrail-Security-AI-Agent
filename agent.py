@@ -86,11 +86,11 @@ async def invoke_agent(request: InvocationRequest):
         except Exception as e:
             yield f"\n[Error streaming response: {str(e)}]\n"
 
-    return StreamingResponse(event_generator(), media_type="text/plain")
+    return StreamingResponse(event_generator(), media_type="text/plain") # TODO: Use text/event-stream if using SSE on client side
 
 @app.get("/ping")
 async def ping():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8888)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
