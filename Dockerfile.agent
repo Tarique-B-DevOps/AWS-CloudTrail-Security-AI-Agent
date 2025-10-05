@@ -11,8 +11,8 @@ RUN uv sync --frozen --no-cache
 
 COPY agent.py ./
 
-EXPOSE 8888
+EXPOSE 8080
 
 ENV BYPASS_TOOL_CONSENT=true
 
-CMD ["uv", "run", "uvicorn", "agent:app", "--host", "0.0.0.0", "--port", "8888"]
+CMD ["uv", "run", "uvicorn", "agent:app", "--host", "0.0.0.0", "--port", "8080"]
