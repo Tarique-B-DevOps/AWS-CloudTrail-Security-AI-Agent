@@ -74,7 +74,7 @@ analyze the usage pattern of the user tarique in us-east-1 region in last one ho
 * The agent will stream **real-time AI-generated analysis**, highlighting user activity patterns and any anomalies.
 
 
-### Deploy on AgentCore
+## Deploy on AgentCore
 
 1. Deploy the agent on **AWS Bedrock AgentCore runtime** by running the provided script:
 
