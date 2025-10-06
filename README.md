@@ -7,6 +7,7 @@
 * **Strands AI Agent Driven**: Automates querying, summarizing, and highlighting suspicious activity.
 * **AWS Bedrock Powered**: Uses cutting-edge models to analyze logs and generate intelligence.
 * **Built-In Tools Only**: All tasks are performed without external tools.
+* **Deploy on AgentCore**: Experience a fully managed agent runtime by deploying on the latest AWS offering for hosting agentic workloads.
 * **Interactive Web Interface**: Chat-style interface for easy query submission and visualization.
 
 Experience a **fast, interactive, and intelligent security assistant** for AWS CloudTrail, generating insights with minimal setup.
@@ -22,6 +23,7 @@ Experience a **fast, interactive, and intelligent security assistant** for AWS C
 
 * **Strands AI Agent** for intelligent log analysis and AI-driven automation
 * **AWS Bedrock** For generative AI capabilities, the agent leverages Amazon Bedrock as the underlying LLM platform.
+* **AWS Bedrock AgentCore** for deployment on agentcore runtime.
 * **FastAPI** for API service
 * **Docker & Docker Compose** for containerization
 * **Streamlit** for interactive web interface
@@ -70,3 +72,17 @@ analyze the usage pattern of the user tarique in us-east-1 region in last one ho
 ```
 
 * The agent will stream **real-time AI-generated analysis**, highlighting user activity patterns and any anomalies.
+
+
+## Deploy on AgentCore
+
+1. Deploy the agent on **AWS Bedrock AgentCore runtime** by running the provided script:
+
+```bash
+./deploy-on-agentcore.sh
+```
+
+2. Once deployment is complete, access the web UI. The runtime should now be set to **AgentCore**.
+3. Submit the same query again; the response will be **generated from the AgentCore runtime**, which is hosting your Strands agent.
+
+> **Use --delete to cleanup**
