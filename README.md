@@ -21,7 +21,7 @@ Experience a **fast, interactive, and intelligent security assistant** for AWS C
 ## Tech Stack
 
 * **Strands AI Agent** for intelligent log analysis and AI-driven automation
-* **AWS Bedrock** for AI-powered processing and insight generation
+* **AWS Bedrock** For generative AI capabilities, the agent leverages Amazon Bedrock as the underlying LLM platform.
 * **FastAPI** for API service
 * **Docker & Docker Compose** for containerization
 * **Streamlit** for interactive web interface
