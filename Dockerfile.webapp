@@ -8,7 +8,7 @@ ENV STREAMLIT_SERVER_PORT=8501
 WORKDIR /app
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir streamlit st-theme
+    && pip install --no-cache-dir streamlit st-theme boto3
 
 COPY webapp.py .
 
