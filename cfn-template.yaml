@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  ResourcePrefix:
+    Description: "Prefix for resource names"
+    Type: String
+    Default: "aws_cloudtrail_agent"
+
+  Environment:
+    Description: "Deployment environment (e.g., dev, prod)"
+    Type: String
+    Default: "prod"
+
+  AgentVersion:
+    Description: "Version tag for the agent Docker image"
+    Type: String
+    Default: "v1.0.0"
+
+  BedrockModelRegion:
+    Description: "AWS Region for Bedrock model"
+    Type: String
+    Default: "ap-south-1"
+
+  BedrockModelID:
+    Description: "Bedrock Model ID to be used by the agent"
+    Type: String
+    Default: "apac.anthropic.claude-3-5-sonnet-20241022-v2:0"
+
+Resources:
+  AgentRuntimeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ResourcePrefix}_agent_role_${Environment}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "AssumeRolePolicy"
+            Effect: "Allow"
+            Principal:
+              Service: "bedrock-agentcore.amazonaws.com"
+            Action: "sts:AssumeRole"
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref "AWS::AccountId"
+              ArnLike:
+                aws:SourceArn: !Sub "arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:*"
+      Policies:
+        - PolicyName: !Sub "${ResourcePrefix}_agent_inline_policy_${Environment}"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "ECRAccess"
+                Effect: Allow
+                Action:
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/*"
+
+              - Sid: "ECSAuth"
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                Resource: "*"  
+
+              - Sid: "CloudWatchLogsAccess"
+                Effect: Allow
+                Action:
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/bedrock_agentcore/runtimes/*"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/bedrock_agentcore/runtimes/*:log-stream:*"
+
+              - Sid: "CloudWatchMetricsAccess"
+                Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    cloudwatch:namespace: "bedrock_agentcore"
+
+              - Sid: "BedrockModelInvocation"
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource:
+                  - "arn:aws:bedrock:*::foundation-model/*"
+                  - !Sub "arn:aws:bedrock:*:${AWS::AccountId}:*"
+
+              - Sid: "LookupTrails"
+                Effect: Allow
+                Action:
+                  - cloudtrail:LookupEvents
+                Resource: "*"
+
+  BedrockAgentCoreRuntime:
+    Type: AWS::BedrockAgentCore::Runtime
+    Properties:
+      AgentRuntimeName: !Sub "${ResourcePrefix}_${Environment}"
+      RoleArn: !GetAtt AgentRuntimeRole.Arn
+      AgentRuntimeArtifact:
+        ContainerConfiguration:
+          ContainerUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ResourcePrefix}_${Environment}:${AgentVersion}"
+      EnvironmentVariables:
+        STRANDS_AGENT_VERSION: !Ref AgentVersion
+        BYPASS_TOOL_CONSENT: "true"
+        BEDROCK_MODEL_REGION: !Ref BedrockModelRegion
+        BEDROCK_MODEL_ID: !Ref BedrockModelID
+      NetworkConfiguration:
+        NetworkMode: PUBLIC
+
+Outputs:
+  AgentRuntimeRoleARN:
+    Description: "ARN of the IAM Role"
+    Value: !GetAtt AgentRuntimeRole.Arn
+  AgenCoreRuntimeARN:
+    Description: "ARN of the Bedrock AgentCore Runtime"
+    Value: !GetAtt BedrockAgentCoreRuntime.AgentRuntimeArn
