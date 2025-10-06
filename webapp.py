@@ -13,7 +13,7 @@ STRANDS_AGENT_API_BASE = os.getenv("STRANDS_AGENT_API_BASE", "http://localhost:8
 PING_URL = f"{STRANDS_AGENT_API_BASE}/ping"
 API_URL = f"{STRANDS_AGENT_API_BASE}/invocations"
 
-STRAND_AGENT_RUNTIME = os.getenv("STRAND_AGENT_RUNTIME", "AgentCore")  # Options: AgentCore, HTTP
+STRAND_AGENT_RUNTIME = os.getenv("STRAND_AGENT_RUNTIME", "Local")  # Options: AgentCore, HTTP
 STRANDS_AGENT_VERSION = os.getenv("STRANDS_AGENT_VERSION", "1.0.0")
 
 AGENTCORE_ARN = os.getenv("STRANDS_AGENTCORE_ARN")
