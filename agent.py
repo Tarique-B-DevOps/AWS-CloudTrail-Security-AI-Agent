@@ -9,11 +9,33 @@ from strands_tools import current_time, use_aws, python_repl
 from fastapi.middleware.cors import CORSMiddleware
 from strands.models import BedrockModel
 import os
+from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig, RetrievalConfig
+from bedrock_agentcore.memory.integrations.strands.session_manager import AgentCoreMemorySessionManager
+import os
 import json
 
 
+import logging
+DEBUG_MODE = os.getenv("DEBUG_MODE", "true").lower() == "true"
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("strands-agent")
+if DEBUG_MODE:
+    logger.setLevel(logging.DEBUG)
+    logging.getLogger("bedrock_agentcore").setLevel(logging.DEBUG)
+    logging.getLogger("strands").setLevel(logging.DEBUG)
+    logger.info("DEBUG_MODE is enabled. Verbose logging active.")
+else:
+    logging.getLogger("bedrock_agentcore").setLevel(logging.WARNING)
+    logging.getLogger("strands").setLevel(logging.INFO)
+    logger.info("Running in production mode (DEBUG_MODE=false).")
+
 BEDROCK_MODEL_REGION = os.getenv("BEDROCK_MODEL_REGION", "us-east-1")
 BEDROCK_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-sonnet-20240229-v1:0")
+AGENTCORE_LTM_MEMORY_ID = os.getenv("AGENTCORE_LTM_MEMORY_ID")
+AGENTCORE_LTM_MEMORY_REGION = os.getenv("AGENTCORE_LTM_MEMORY_REGION", "us-east-1")
 STRANDS_AGENT_VERSION = os.getenv("AGENT_VERSION", "1.0.0")
 STRANDS_AGENT_TITLE = "AWS CloudTrail Security Agent"
 
@@ -40,16 +62,55 @@ Your responsibilities:
 5. Use AWS tools (`use_aws`) to query CloudTrail data.
 6. Use Python tools (`python_repl`) for log analysis (sorting, counting, summarizing, anomaly detection).
 7. Respond with concise, actionable security insights. Always highlight suspicious activity explicitly.
+8. Use your Long Term Memory to recall previous security incidents, patterns, or user preferences about report formats.
 
 Stay focused on CloudTrail analysis, security insights, and useful summaries. 
 Do not provide unrelated information.
 """
 
-strands_agent = Agent(
-    model=bedrock_model,
-    tools=[current_time, use_aws, python_repl],
-    system_prompt=system_prompt
-)
+
+# Global cache for in-memory agents (when LTM is disabled)
+# Key: session_id, Value: Agent instance
+_agent_cache: Dict[str, Agent] = {}
+
+def get_agent(session_id: str, actor_id: str):
+    if AGENTCORE_LTM_MEMORY_ID:
+        logger.info(f"Initializing agent with LTM Memory ID: {AGENTCORE_LTM_MEMORY_ID}")
+        memory_config = AgentCoreMemoryConfig(
+            memory_id=AGENTCORE_LTM_MEMORY_ID,
+            session_id=session_id,
+            actor_id=actor_id,
+            retrieval_config={
+                "/preferences/{actorId}": RetrievalConfig(top_k=5, relevance_score=0.7),
+                "/facts/{actorId}": RetrievalConfig(top_k=10, relevance_score=0.3),
+                "/summaries/{actorId}/{sessionId}": RetrievalConfig(top_k=5, relevance_score=0.5)
+            }
+        )
+        
+        session_manager = AgentCoreMemorySessionManager(
+            agentcore_memory_config=memory_config,
+            region_name=AGENTCORE_LTM_MEMORY_REGION
+        )
+        
+        return Agent(
+            model=bedrock_model,
+            tools=[current_time, use_aws, python_repl],
+            system_prompt=system_prompt,
+            session_manager=session_manager
+        )
+    else:
+        if session_id in _agent_cache:
+            logger.info(f"Retrieving cached agent for session: {session_id}")
+            return _agent_cache[session_id]
+
+        logger.info(f"Initializing new agent for session: {session_id} (No LTM)")
+        new_agent = Agent(
+            model=bedrock_model,
+            tools=[current_time, use_aws, python_repl],
+            system_prompt=system_prompt
+        )
+        _agent_cache[session_id] = new_agent
+        return new_agent
 
 app = FastAPI(title=STRANDS_AGENT_TITLE, version=STRANDS_AGENT_VERSION)
 
@@ -68,15 +129,20 @@ class InvocationRequest(BaseModel):
 async def invoke_agent(request: InvocationRequest):
 
     user_message = request.input.get("prompt", "")
+    session_id = request.input.get("session_id", f"session_{datetime.now().strftime('%Y%m%d%H%M%S')}")
+    actor_id = request.input.get("actor_id", "default_security_analyst")
+
     if not user_message:
         raise HTTPException(
             status_code=400,
             detail="No prompt found in input. Please provide a 'prompt' key in the input."
         )
     
+    agent_instance = get_agent(session_id, actor_id)
+
     async def event_generator() -> AsyncGenerator[str, None]:
         try:
-            async for event in strands_agent.stream_async(user_message):
+            async for event in agent_instance.stream_async(user_message):
                 # The event dict may contain "data" key with streamed text chunks
                 if "data" in event:
                     # Stream raw text chunks

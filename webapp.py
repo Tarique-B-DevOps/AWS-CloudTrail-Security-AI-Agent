@@ -7,7 +7,7 @@ import time
 import random
 import string
 
-st.set_page_config(page_title="AWS CloudTrail Security Agent", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="AWS CloudTrail Security Agent", initial_sidebar_state="expanded")
 
 STRANDS_AGENT_API_BASE = os.getenv("STRANDS_AGENT_API_BASE", "http://localhost:8080")
 PING_URL = f"{STRANDS_AGENT_API_BASE}/ping"
@@ -17,7 +17,59 @@ STRAND_AGENT_RUNTIME = os.getenv("STRAND_AGENT_RUNTIME", "Local")  # Options: Ag
 STRANDS_AGENT_VERSION = os.getenv("STRANDS_AGENT_VERSION", "1.0.0")
 
 AGENTCORE_ARN = os.getenv("STRANDS_AGENTCORE_ARN")
-AWS_SESSION_ID = ''.join(random.choices(string.ascii_lowercase, k=35))
+
+with st.sidebar:
+    st.title("CloudTrail Agent")
+    
+    st.markdown("---")
+    
+    with st.expander("Identity", expanded=True):
+        if "user_actor_id" not in st.session_state:
+            st.session_state.user_actor_id = "tarique_001"
+        
+        user_actor_id_input = st.text_input(
+            "Actor ID", 
+            value=st.session_state.user_actor_id,
+            help="Unique identifier for the user. Used to retrieve personal preferences and long-term memory."
+        )
+        
+        if not user_actor_id_input.strip():
+            st.error("Actor ID cannot be empty.")
+        else:
+            st.session_state.user_actor_id = user_actor_id_input
+
+    with st.expander("Session Management", expanded=False):
+        if "current_session_id" not in st.session_state:
+             st.session_state.current_session_id = f"sess_{''.join(random.choices(string.ascii_lowercase + string.digits, k=8))}"
+
+        st.text_input("Current Session ID", value=st.session_state.current_session_id, disabled=True)
+        
+        if st.button("Start New Session", type="secondary", use_container_width=True):
+            st.session_state.current_session_id = f"sess_{''.join(random.choices(string.ascii_lowercase + string.digits, k=8))}"
+            st.session_state.messages = [] # Clear chat on new session
+            st.rerun()
+
+    with st.expander("Memory Configuration", expanded=False):
+        ltm_memory_id = os.getenv("AGENTCORE_LTM_MEMORY_ID")
+
+        if STRAND_AGENT_RUNTIME == "AgentCore":
+            st.info("Managed by AgentCore")
+        elif ltm_memory_id:
+            st.success("LTM Enabled")
+            st.caption(f"AgentCore Memory ID: ...{ltm_memory_id[-6:]}")
+        else:
+            st.warning("Ephemeral Mode")
+            st.caption("History lost on restart")
+
+    st.markdown("---")
+    
+    with st.expander("System Info", expanded=False):
+        st.json({
+            "api_url": STRANDS_AGENT_API_BASE,
+            "runtime": STRAND_AGENT_RUNTIME,
+            "actor_id": st.session_state.user_actor_id,
+            "memory_id": ltm_memory_id or "None"
+        })
 
 def check_http_status():
     import requests
@@ -122,10 +174,20 @@ def invoke_http(prompt: str, response_container):
     response_chunks = []
     prev_text = ""
 
+    # Using session state values configured in sidebar
+    current_actor = st.session_state.user_actor_id
+    current_session = st.session_state.current_session_id
+
     try:
         with requests.post(
             API_URL,
-            json={"input": {"prompt": prompt}},
+            json={
+                "input": {
+                    "prompt": prompt,
+                    "session_id": current_session,
+                    "actor_id": current_actor
+                }
+            },
             stream=True,
             timeout=180,
         ) as resp:
